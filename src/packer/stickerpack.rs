@@ -14,6 +14,8 @@ use crate::packer::types::Result;
 
 type StickersCollection = std::collections::HashMap<md5::Digest, StickerInfo>;
 
+static PACK_FILE: &str = "pack.json";
+
 #[derive(Serialize, Deserialize)]
 #[serde(default)]
 pub struct StickerPack {
@@ -46,25 +48,28 @@ impl Default for StickerPack {
 
 impl StickerPack {
   fn load<P>(path: P) -> Result<StickerPack> where P: AsRef<Path> {
-    let dir_path = path.as_ref();
-    // check if the given argument is a valid directory
-    if ! dir_path.is_dir() {
-      let base_path_str = dir_path.to_str().ok_or(anyhow!("unable to get pack directory path"))?;
-      Err(anyhow!("{} is not a directory, ignoring", base_path_str))?
+    let path_ref: &std::path::Path = path.as_ref();
+
+    #[cfg(debug_assertions)]
+    println!("loading {:?}", path_ref);
+
+    // TODO load directly the given json, otherwise load a default json name
+    let json_path: std::path::PathBuf;
+
+    // load either a path + default filename or the provided filename
+    if path_ref.is_dir() {
+      json_path = path_ref.join(PACK_FILE);
+    } else {
+      json_path = path_ref.to_path_buf();
     }
 
     #[cfg(debug_assertions)]
-    println!("directory {} is valid, checking pack.json", dir_path.to_str().unwrap_or_default());
+    println!("json path considered: {:?}", json_path);
 
-    // check if pack.json exists
-    let json_path = dir_path.join("pack.json");
+    // check if the pack file exists
     if ! json_path.is_file() {
-      let json_path_str = json_path.to_str().ok_or(anyhow!("unable to get pack json path"))?;
-      Err(anyhow!("{} does not exist, ignoring", json_path_str))?
+      Err(anyhow!("invalid path {:?} provided", path_ref))?
     }
-
-    #[cfg(debug_assertions)]
-    println!("{} found, loading into object", json_path.to_str().unwrap_or_default());
 
     // read the pack.json contents and unmarshal it to a StickerPack object
     let base_contents = read_to_string(json_path)?;
@@ -121,9 +126,16 @@ impl StickerPack {
 
       // continue if the entry isn't a webp image
       let entry_path = entry.path();
-      let entry_extension = entry_path.extension().ok_or(anyhow!("unable to get file extension"))?;
-      if ! entry_extension.eq("webp") {
-        continue;
+      match entry_path.extension().ok_or(anyhow!("unable to get file extension for {:?}", entry_path)) {
+        Ok(entry_extension) => {
+          if ! entry_extension.eq("webp") {
+            continue;
+          }
+        },
+        Err(error) => {
+          eprintln!("{}", error);
+          continue;
+        }
       }
 
       // get the file contents
