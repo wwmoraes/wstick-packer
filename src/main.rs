@@ -15,6 +15,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         Err(error) => eprintln!("{}", error),
       }
     });
+  } else if let Some(extract_matches) = matches.subcommand_matches(cli::extract::NAME) {
+    let json_path = extract_matches.value_of(cli::extract::ARG_PACK_FILE).ok_or("no pack json file provided")?;
+    match StickerPack::extract(json_path) {
+      Ok(_) => println!("pack extracted successfully"),
+      Err(error) => eprintln!("{}", error),
+    }
   }
 
   Ok(())

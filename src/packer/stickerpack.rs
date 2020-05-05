@@ -156,4 +156,23 @@ impl StickerPack {
 
     Ok(pack_data)
   }
+
+  pub fn extract<P>(path: P) -> Result<()> where P: AsRef<Path> {
+    let path_ref: &std::path::Path = path.as_ref();
+
+    let pack_data = StickerPack::load(path_ref)?;
+
+    for sticker in pack_data.stickers {
+      let image_basename = md5::compute(&sticker.image_data);
+      let sticker_path = path_ref.with_file_name(format!("{:?}.webp", image_basename));
+      println!("extracting {:?}", sticker_path);
+      let image_data = base64::decode(&sticker.image_data);
+      match image_data {
+        Ok(data) => std::fs::write(sticker_path, data)?,
+        Err(error) => eprintln!("{}", error),
+      }
+    }
+
+    Ok(())
+  }
 }
