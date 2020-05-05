@@ -145,7 +145,7 @@ impl StickerPack {
       let sticker_hash = md5::compute(entry_contents.clone());
 
       // check if an entry already exists, and if not, create and insert
-      stickers_collection.entry(sticker_hash).or_insert(StickerInfo::load_from_data(entry_contents)?);
+      stickers_collection.entry(sticker_hash).or_insert(StickerInfo::load_from_data(entry_contents.as_ref())?);
     }
 
     // collect the hashmap values into the pack vector
@@ -162,14 +162,14 @@ impl StickerPack {
 
     let pack_data = StickerPack::load(path_ref)?;
 
-    for sticker in pack_data.stickers {
-      let image_basename = md5::compute(&sticker.image_data);
-      let sticker_path = path_ref.with_file_name(format!("{:?}.webp", image_basename));
-      println!("extracting {:?}", sticker_path);
-      let image_data = base64::decode(&sticker.image_data);
-      match image_data {
-        Ok(data) => std::fs::write(sticker_path, data)?,
-        Err(error) => eprintln!("{}", error),
+    if ! pack_data.tray_image.is_empty() {
+      let mut tray_sticker = StickerInfo::load_from_data(pack_data.tray_image.as_bytes())?;
+      tray_sticker.save(path_ref)?;
+    }
+
+    for mut sticker in pack_data.stickers {
+      if let Err(error) = sticker.save(path_ref) {
+        eprintln!("{}", error);
       }
     }
 
