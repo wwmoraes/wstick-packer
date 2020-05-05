@@ -1,26 +1,21 @@
 use std::error::Error;
-use std::env;
-use anyhow::anyhow;
 
+mod cli;
 mod packer;
 use packer::{StickerPack};
 
 fn main() -> Result<(), Box<dyn Error>> {
-  // get arguments skipping the caller
-  let args: Vec<String> = env::args().skip(1).collect();
+  let matches = cli::app().get_matches();
 
-  // we need at least one folder to try generating the sticker pack!
-  if args.len() == 0 {
-    Err(anyhow!("pass at least one folder"))?
+  if let Some(generate_matches) = matches.subcommand_matches(cli::generate::NAME) {
+    let paths = generate_matches.values_of(cli::generate::ARG_DIRECTORY).ok_or("no directory provided")?;
+    paths.for_each(|pack_path| {
+      match StickerPack::generate(pack_path) {
+        Ok(result) => println!("pack {} generated successfully", result.name),
+        Err(error) => eprintln!("{}", error),
+      }
+    });
   }
-
-  // parse each folder passed
-  args.into_iter().map(StickerPack::generate).for_each(|pack| {
-    match pack {
-      Ok(result) => println!("pack {} generated successfully", result.name),
-      Err(error) => eprintln!("{}", error),
-    }
-  });
 
   Ok(())
 }
