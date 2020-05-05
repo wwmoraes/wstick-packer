@@ -96,7 +96,7 @@ impl StickerPack {
     let mut pack_data = StickerPack::load(base_directory)?;
 
     // set tray image if it exists
-    let tray_image_path = base_directory.join("tray_image.jpg");
+    let tray_image_path = base_directory.join("tray_image.webp");
     if tray_image_path.is_file() {
       let tray_image_data = read_to_string(tray_image_path)?;
       pack_data.tray_image = base64::encode(tray_image_data);
@@ -119,10 +119,10 @@ impl StickerPack {
         continue;
       }
 
-      // continue if the entry isn't a jpeg image (ended in .jpg)
+      // continue if the entry isn't a webp image
       let entry_path = entry.path();
-      if ! entry_extension.eq("jpg") {
       let entry_extension = entry_path.extension().ok_or(anyhow!("unable to get file extension"))?;
+      if ! entry_extension.eq("webp") {
         continue;
       }
 
