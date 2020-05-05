@@ -45,7 +45,7 @@ impl Default for StickerPack {
 }
 
 impl StickerPack {
-  pub fn load<P>(path: P) -> Result<StickerPack> where P: AsRef<Path> {
+  fn load<P>(path: P) -> Result<StickerPack> where P: AsRef<Path> {
     let dir_path = path.as_ref();
     // check if the given argument is a valid directory
     if ! dir_path.is_dir() {
@@ -72,7 +72,7 @@ impl StickerPack {
     Ok(result)
   }
 
-  pub fn save<P>(&self, path: P) -> Result<()> where P: AsRef<Path> {
+  fn save<P>(&self, path: P) -> Result<()> where P: AsRef<Path> {
     let base_directory = path.as_ref();
 
     if ! base_directory.is_dir() {
