@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::env;
+use anyhow::anyhow;
 
 mod packer;
 use packer::{StickerPack};
@@ -10,7 +11,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
   // we need at least one folder to try generating the sticker pack!
   if args.len() == 0 {
-    Err("pass at least one folder")?
+    Err(anyhow!("pass at least one folder"))?
   }
 
   // parse each folder passed

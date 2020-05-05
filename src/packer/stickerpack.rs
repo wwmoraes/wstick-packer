@@ -7,6 +7,7 @@ use serde_derive::{Serialize, Deserialize};
 use std::fs::read_to_string;
 use serde_json;
 use md5;
+use anyhow::anyhow;
 
 use crate::packer::stickerinfo::StickerInfo;
 use crate::packer::types::Result;
@@ -48,8 +49,8 @@ impl StickerPack {
     let dir_path = path.as_ref();
     // check if the given argument is a valid directory
     if ! dir_path.is_dir() {
-      let base_path_str = dir_path.to_str().ok_or("unable to get pack directory path")?;
-      Err(format!("{} is not a directory, ignoring", base_path_str))?
+      let base_path_str = dir_path.to_str().ok_or(anyhow!("unable to get pack directory path"))?;
+      Err(anyhow!("{} is not a directory, ignoring", base_path_str))?
     }
 
     #[cfg(debug_assertions)]
@@ -58,8 +59,8 @@ impl StickerPack {
     // check if pack.json exists
     let json_path = dir_path.join("pack.json");
     if ! json_path.is_file() {
-      let json_path_str = json_path.to_str().ok_or("unable to get pack json path")?;
-      Err(format!("{} does not exist, ignoring", json_path_str))?
+      let json_path_str = json_path.to_str().ok_or(anyhow!("unable to get pack json path"))?;
+      Err(anyhow!("{} does not exist, ignoring", json_path_str))?
     }
 
     #[cfg(debug_assertions)]
@@ -75,8 +76,8 @@ impl StickerPack {
     let base_directory = path.as_ref();
 
     if ! base_directory.is_dir() {
-      let base_path_str = base_directory.to_str().ok_or("unable to get pack directory path")?;
-      Err(format!("{} is not a directory, ignoring", base_path_str))?
+      let base_path_str = base_directory.to_str().ok_or(anyhow!("unable to get pack directory path"))?;
+      Err(anyhow!("{} is not a directory, ignoring", base_path_str))?
     }
 
     // marshall the pack data
@@ -108,6 +109,7 @@ impl StickerPack {
     let mut stickers_collection: StickersCollection = std::collections::HashMap::new();
 
     // parse each entry on the pack directory
+    // TODO thread all the things!
     for pack_dir_entry in pack_dir_contents {
       let entry: std::fs::DirEntry = pack_dir_entry?;
 
@@ -119,8 +121,8 @@ impl StickerPack {
 
       // continue if the entry isn't a jpeg image (ended in .jpg)
       let entry_path = entry.path();
-      let entry_extension = entry_path.extension().ok_or("unable to get file extension")?;
       if ! entry_extension.eq("jpg") {
+      let entry_extension = entry_path.extension().ok_or(anyhow!("unable to get file extension"))?;
         continue;
       }
 
@@ -135,7 +137,7 @@ impl StickerPack {
     }
 
     // collect the hashmap values into the pack vector
-    // TODO collect the hashmap values moving instead of cloning
+    // TODO collect the hashmap values by moving instead of cloning
     pack_data.stickers = stickers_collection.values().cloned().collect::<Vec<StickerInfo>>();
 
     pack_data.save(base_directory)?;
